@@ -41,9 +41,7 @@ func (*Mqtt) Connect(
 	if state == nil {
 		common.Throw(common.GetRuntime(ctx), ErrorState)
 		return nil
-	}
-
-	
+	}	
 
 	opts := paho.NewClientOptions()
 
