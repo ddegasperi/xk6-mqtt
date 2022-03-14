@@ -31,6 +31,8 @@ func (*Mqtt) Connect(
 	clientid string,
 	// timeout ms
 	timeout uint,
+	// use tls connection
+	enableSsl bool,
 	// path to local cert
 	certPath string,
 
@@ -40,21 +42,30 @@ func (*Mqtt) Connect(
 		common.Throw(common.GetRuntime(ctx), ErrorState)
 		return nil
 	}
-	opts := paho.NewClientOptions()
-	// Use local cert if specified
-	if len(certPath) > 0 {
-		mqtt_tls_ca, err := os.ReadFile(certPath)
-		if err != nil {
-			panic(err)
-		}
 
-		root_ca := x509.NewCertPool()
-		load_ca := root_ca.AppendCertsFromPEM([]byte(mqtt_tls_ca))
-		if !load_ca {
-			panic("failed to parse root certificate")
+	
+
+	opts := paho.NewClientOptions()
+
+	if enableSsl {
+		// Use local cert if specified
+		if len(certPath) > 0 {
+			mqtt_tls_ca, err := os.ReadFile(certPath)
+			if err != nil {
+				panic(err)
+			}
+
+			root_ca := x509.NewCertPool()
+			load_ca := root_ca.AppendCertsFromPEM([]byte(mqtt_tls_ca))
+			if !load_ca {
+				panic("failed to parse root certificate")
+			}
+			tlsConfig := &tls.Config{RootCAs: root_ca}
+			opts.SetTLSConfig(tlsConfig)
+		} else {
+			tlsConfig := &tls.Config{InsecureSkipVerify: true, ClientAuth: tls.NoClientCert}
+			opts.SetTLSConfig(tlsConfig)
 		}
-		tlsConfig := &tls.Config{RootCAs: root_ca}
-		opts.SetTLSConfig(tlsConfig)
 	}
 
 	for i := range servers {
