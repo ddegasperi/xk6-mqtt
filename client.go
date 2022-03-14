@@ -61,7 +61,13 @@ func (*Mqtt) Connect(
 			tlsConfig := &tls.Config{RootCAs: root_ca}
 			opts.SetTLSConfig(tlsConfig)
 		} else {
-			tlsConfig := &tls.Config{InsecureSkipVerify: true, ClientAuth: tls.NoClientCert}
+			certpool := x509.NewCertPool()
+			tlsConfig := &tls.Config{
+				RootCAs: certpool,
+				InsecureSkipVerify: true,
+				ClientAuth: tls.NoClientCert,
+				ClientCAs: nil,
+			}
 			opts.SetTLSConfig(tlsConfig)
 		}
 	}
