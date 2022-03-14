@@ -67,6 +67,8 @@ export default function () {
                 k6PubId,
                 // timeout in ms
                 timeout,
+                // enable tls
+                false
             )
             vus_connections[k6PubId] = pub_client;
         } catch (error) {
@@ -96,6 +98,8 @@ export default function () {
             k6SubId,
             // timeout in ms
             timeout,
+            // enable tls
+            false
         )
         vus_connections[k6SubId] = sub_client;
         } catch (error) {
