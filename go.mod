@@ -1,6 +1,6 @@
 module github.com/ddegasperi/xk6-mqtt
 
-go 1.14
+go 1.17
 
 require (
 	github.com/dustin/go-humanize v1.0.1-0.20200219035652-afde56e7acac // indirect
