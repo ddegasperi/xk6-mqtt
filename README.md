@@ -25,14 +25,14 @@ Then, install [xk6](https://github.com/grafana/xk6) and build your custom k6 bin
 
 2. Build the binary: from latest version
   ```shell
-  $ xk6 build --with github.com/pmalhaire/xk6-mqtt@latest
+  $ xk6 build --with github.com/ddegasperi/xk6-mqtt@latest
   ```
 
 3. Build the binary: from source code
   ```shell
-  git clone github.com/pmalhaire/xk6-mqtt
+  git clone github.com/ddegasperi/xk6-mqtt
   cd xk6-mqtt
-  $ xk6 build --with github.com/pmalhaire/xk6-mqtt=.
+  $ xk6 build --with github.com/ddegasperi/xk6-mqtt=.
   ```
 
 ## Run & Test
