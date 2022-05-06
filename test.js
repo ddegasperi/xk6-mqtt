@@ -9,18 +9,7 @@ import {
     check
 } from 'k6';
 
-import {
-    // connect to mqtt
-    connect,
-    // close connection
-    close,
-    // subscribe to topic
-    subscribe,
-    // consume one message
-    consume,
-    // publish one message
-    publish,
-} from 'k6/x/mqtt'; // import mqtt plugin
+const mqtt = require('k6/x/mqtt');
 
 import { Trend } from 'k6/metrics';
 
@@ -34,6 +23,7 @@ let vus_connections = {}
 // default timeout (ms)
 let timeout = 2000
 
+const msPerSecond = 1000;
 
 let publish_trend = new Trend('publish_time', true);
 let subscribe_trend = new Trend('subscribe_time', true);
@@ -49,12 +39,13 @@ export default function () {
     let err_pub_client, pub_client;
     const host = "localhost";
     const port = "1883";
+
     // use one connection per vu
     if (k6PubId in vus_connections) {
         pub_client = vus_connections[k6PubId];
     } else {
         try {
-            pub_client = connect(
+            pub_client = mqtt.connect(
                 // The list of URL of  MQTT server to connect to
                 [host + ":" + port],
                 // A username to authenticate to the MQTT server
@@ -73,6 +64,7 @@ export default function () {
             vus_connections[k6PubId] = pub_client;
         } catch (error) {
             err_pub_client = error;
+            console.log("connect error:", error)
         }
     }
     check(err_pub_client, {
@@ -85,23 +77,23 @@ export default function () {
         sub_client = vus_connections[k6SubId];
     } else {
         try {
-        sub_client = connect(
-            // The list of URL of  MQTT server to connect to
-            [host + ":" + port],
-            // A username to authenticate to the MQTT server
-            "",
-            // Password to match username
-            "",
-            // clean session setting
-            false,
-            // Client id for reader
-            k6SubId,
-            // timeout in ms
-            timeout,
-            // enable tls
-            false
-        )
-        vus_connections[k6SubId] = sub_client;
+            sub_client = mqtt.connect(
+                // The list of URL of  MQTT server to connect to
+                [host + ":" + port],
+                // A username to authenticate to the MQTT server
+                "",
+                // Password to match username
+                "",
+                // clean session setting
+                false,
+                // Client id for reader
+                k6SubId,
+                // timeout in ms
+                timeout,
+                // enable tls
+                false,
+            )
+            vus_connections[k6SubId] = sub_client;
         } catch (error) {
             err_sub_client = error;
         }
@@ -113,7 +105,7 @@ export default function () {
     // subscribe first
     let err_subscribe, consume_token;
     try {
-        consume_token = subscribe(
+        consume_token = mqtt.subscribe(
             // consume object
             sub_client,
             // topic to be used
@@ -133,7 +125,7 @@ export default function () {
     let err_publish;
     let startTime = new Date().getTime();
     try {
-        publish(
+        mqtt.publish(
             // producer object
             pub_client,
             // topic to be used
@@ -147,7 +139,8 @@ export default function () {
             // timeout in ms
             timeout,
         );
-        publish_trend.add(new Date().getTime() - startTime);
+        let now = new Date().getTime();
+        publish_trend.add(now - startTime);
     } catch (error) {
         err_publish = error
     }
@@ -158,13 +151,14 @@ export default function () {
     let err_consume, message
     try {
         // Read one message
-        message = consume(
+        message = mqtt.consume(
             // token to recieve message
             consume_token,
             // timeout in ms
             timeout,
         );
-        subscribe_trend.add(new Date().getTime() - startTime);
+        let now = new Date().getTime();
+        subscribe_trend.add(now - startTime);
     } catch (error) {
         err_consume = error
     }
@@ -181,6 +175,6 @@ export default function () {
 
 export function teardown() {
     for (client in vus_connections) {
-        close(client, timeout);
+        mqtt.close(client, timeout);
     }
 }

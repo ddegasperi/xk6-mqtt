@@ -1,7 +1,6 @@
 package mqtt
 
 import (
-	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"os"
@@ -9,16 +8,11 @@ import (
 
 	paho "github.com/eclipse/paho.mqtt.golang"
 	"go.k6.io/k6/js/common"
-	"go.k6.io/k6/lib"
 )
 
-// Mqtt is the objet to be used in tests
-type Mqtt struct {
-}
-
 // Connect create a connection to mqtt
-func (*Mqtt) Connect(
-	ctx context.Context,
+func (m *Mqtt) Connect(
+	//ctx context.Context,
 	// The list of URL of  MQTT server to connect to
 	servers []string,
 	// A username to authenticate to the MQTT server
@@ -37,9 +31,11 @@ func (*Mqtt) Connect(
 	certPath string,
 
 ) paho.Client {
-	state := lib.GetState(ctx)
+	// TODO fix connect is done when no VU is available
+	state := m.vu.State()
+	rt := m.vu.Runtime()
 	if state == nil {
-		common.Throw(common.GetRuntime(ctx), ErrorState)
+		common.Throw(rt, ErrorState)
 		return nil
 	}	
 
@@ -71,7 +67,6 @@ func (*Mqtt) Connect(
 			opts.SetTLSConfig(tlsConfig)
 		}
 	}
-
 	for i := range servers {
 		opts.AddBroker(servers[i])
 	}
@@ -81,29 +76,31 @@ func (*Mqtt) Connect(
 	opts.SetCleanSession(cleansess)
 	client := paho.NewClient(opts)
 	token := client.Connect()
-
 	if !token.WaitTimeout(time.Duration(timeout) * time.Millisecond) {
-		common.Throw(common.GetRuntime(ctx), ErrorTimeout)
+		rt := m.vu.Runtime()
+		common.Throw(rt, ErrorTimeout)
 		return nil
 	}
 	if token.Error() != nil {
-		common.Throw(common.GetRuntime(ctx), ErrorClient)
+		rt := m.vu.Runtime()
+		common.Throw(rt, token.Error())
 		return nil
 	}
 	return client
 }
 
 // Close the given client
-func (*Mqtt) Close(
-	ctx context.Context,
+func (m *Mqtt) Close(
+	//ctx context.Context,
 	// Mqtt client to be closed
 	client paho.Client,
 	// timeout ms
 	timeout uint,
 ) {
-	state := lib.GetState(ctx)
+	state := m.vu.State()
+	rt := m.vu.Runtime()
 	if state == nil {
-		common.Throw(common.GetRuntime(ctx), ErrorState)
+		common.Throw(rt, ErrorState)
 		return
 	}
 	client.Disconnect(timeout)
